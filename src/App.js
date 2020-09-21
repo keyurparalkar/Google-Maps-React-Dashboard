@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Container, Button, Slider,Drawer} from '@material-ui/core';
+import {Container, Button, Slider, Box,Grid, Divider} from '@material-ui/core';
 import GoogleMapReact from 'google-map-react';
 
 import jsonData from './location-158393297483727762_5th_9th_june.json';
@@ -57,14 +57,15 @@ class LoadGoogleMap extends Component{
       arrayPos:null,
       timerId:null,
       trackStatus:'playing',
-      disabled:false
+      disabled:false,
+      currentCoord:{lat:0, lng:0}
      }
 
     this.handleMapObjs = this.handleMapObjs.bind(this);
     this.getJSONData = this.getJSONData.bind(this);
     this.startTracking = this.startTracking.bind(this);
     this.pauseTracking = this.pauseTracking.bind(this);
-    this.stopTracking = this.stopTracking.bind(this);
+    this.resetTracking = this.resetTracking.bind(this);
     this.changeSliderValue = this.changeSliderValue.bind(this);
 
   }
@@ -86,7 +87,7 @@ class LoadGoogleMap extends Component{
     clearInterval(this.state.timerId)
   }
 
-  stopTracking(){
+  resetTracking(){
     this.state.polyline.setMap(null)
     this.state.marker.setPosition(null)
     this.state.polyline.setPath([])
@@ -94,7 +95,8 @@ class LoadGoogleMap extends Component{
     this.setState({
       arrayPos:0,
       timerId:null,
-      disabled:false
+      disabled:false,
+      currentCoord:{lat:0, lng:0}
     })
   }
 
@@ -125,7 +127,8 @@ class LoadGoogleMap extends Component{
         this.setState({
           arrayPos: i,
           timerId: timerid,
-          disabled:true
+          disabled:true,
+          currentCoord: coords
         })
         
     }.bind(this), 10)
@@ -188,31 +191,64 @@ class LoadGoogleMap extends Component{
   render(){
     console.log(this.state.sliderVal)
     return(
-      <div style={{height:'100vh', width:'100%'}}>
-        <h1> Google Maps = {this.state.arrayPos}</h1>
-        <Button variant="contained" onClick={this.startTracking} disabled={this.state.disabled}>START/RESUME</Button>
-        <Button variant="contained" onClick={this.pauseTracking}>PAUSE</Button>
-        <Button variant="contained" onClick={this.stopTracking}>STOP</Button>
-        <Slider 
-        defaultValue={1}
-        step={1}
-        aria-labelledby="discrete-slider-custom"
-        getAriaValueText={(val)=>`${val}x`}
-        valueLabelDisplay="auto"
-        min={1}
-        max={5}
-        marks={marks}
-        onChange={this.changeSliderValue}
-        />
-          <GoogleMapReact 
-          bootstrapURLKeys={{ key: process.env.REACT_APP_GOOGLE_API_KEY }}
-          defaultCenter={this.props.center}
-          defaultZoom={this.props.zoom}
-          yesIWantToUseGoogleMapApiInternals 
-          onGoogleApiLoaded={this.handleMapObjs}
-          >
-          </GoogleMapReact>
-      </div>
+      <Grid container spacing={3}>
+        <Grid item xs={3} style={{borderLeftWidth:10}}>
+          <Box display="flex" flexDirection="column" justifyContent="center" borderLeft={15} borderColor="white">
+            
+            <Grid item xs={12}>
+              <Box textAlign="center">
+                <h1> Vehicle Tracker</h1>
+              </Box>              
+            </Grid>
+            <Divider/>
+            <Grid item xs={12}>
+              <Box>
+                <h4> <b>Currrent Latitude:</b> {this.state.currentCoord.lat}</h4>
+                <h4> <b>Currrent Longitude:</b> {this.state.currentCoord.lng}</h4>
+              </Box>
+              <Divider/>
+              <h4>Controls:</h4>
+              <Box display="flex" flexDirection="row" justifyContent="space-evenly" fontFamily="QuickSand, sans-serif">
+                <Button variant="contained" onClick={this.startTracking} disabled={this.state.disabled}>START/RESUME</Button>
+                <Button variant="contained" onClick={this.pauseTracking}>PAUSE</Button>
+                <Button variant="contained" onClick={this.resetTracking}>RESET</Button>
+              </Box>
+              
+              <Box borderTop={15} borderColor="white">
+              <Divider/>
+                  <h4>Control Speed:</h4>
+                  <Slider 
+                    defaultValue={1}
+                    step={1}
+                    aria-labelledby="discrete-slider-custom"
+                    getAriaValueText={(val)=>`${val}x`}
+                    valueLabelDisplay="auto"
+                    min={1}
+                    max={5}
+                    marks={marks}
+                    onChange={this.changeSliderValue}
+                  />
+              </Box>
+              
+              </Grid>
+              </Box> 
+          </Grid>
+          
+        <Grid item xs={9}>
+          <div style={{height:'100vh', width:'100%'}}>
+              <GoogleMapReact 
+              bootstrapURLKeys={{ key: process.env.REACT_APP_GOOGLE_API_KEY }}
+              defaultCenter={this.props.center}
+              defaultZoom={this.props.zoom}
+              yesIWantToUseGoogleMapApiInternals 
+              onGoogleApiLoaded={this.handleMapObjs}
+              >
+              </GoogleMapReact>
+          </div>
+        </Grid>
+        
+      </Grid>
+      
     )
   }
 }
@@ -227,9 +263,7 @@ LoadGoogleMap.defaultProps = {
 
 function App() {
   return (
-    <Container className="App">
-        <LoadGoogleMap/>
-    </Container>
+      <LoadGoogleMap/>
   );
 }
 

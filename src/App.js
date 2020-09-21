@@ -2,7 +2,9 @@ import React, {Component} from 'react';
 import {Container} from '@material-ui/core';
 import GoogleMapReact from 'google-map-react';
 
+import jsonData from './location-158393297483727762_5th_9th_june.json';
 import './App.css';
+
 
 class SideDrawer extends Component{
   constructor(props){
@@ -33,26 +35,87 @@ class LoadGoogleMap extends Component{
   constructor(props){
     super(props)
 
-    this.handleMapObjs = this.handleMapObjs.bind(this)
+    this.state = {
+      startPoint: {
+        lat:0,
+        lng:0
+      },
+      endPoint:{
+        lat:0,
+        lng:0
+      },
+      paths:null
+    }
+
+    this.handleMapObjs = this.handleMapObjs.bind(this);
+    this.getJSONData = this.getJSONData.bind(this);
+
+  }
+
+  getJSONData(){
+    let temp = []
+    let lenData = jsonData.length
+
+    for (const obj of jsonData){
+        if(obj.hasOwnProperty('multi_geo')){
+            for(const geo of obj.multi_geo){
+                let coord = {lat:geo.geocode.lat, lng:geo.geocode.lng}
+                if(coord.lat != null || coord.lng != null){
+                  temp.push(coord)
+                }
+            }
+        }
+    }
+
+    return temp
   }
 
   handleMapObjs(args){
-    let fligthPathPoints = [
-      {lat:15.527665, lng:74.907585},
-      {lat:15.503681666666667, lng:74.95155666666666},
-      {lat:13.6113, lng:76.95476833333333}
-    ]
+
+    let fligthPathPoints = this.getJSONData()
+
+    this.setState({
+      startPoint:{
+        lat: fligthPathPoints[0].lat,
+        lng: fligthPathPoints[0].lng
+      },
+      endPoint:{
+       lat: fligthPathPoints[fligthPathPoints.length -1].lat,
+       lng: fligthPathPoints[fligthPathPoints.length -1].lng
+     } 
+     })
+
+    const arrow = {
+      strokeColor:'white',
+      strokeWeigth:1,
+      scale:3,
+      path:args.maps.SymbolPath.CIRCLE
+    }
+
+    const marker = new args.maps.Marker({map:args.map, icon:arrow})
 
     const fligthPath = new args.maps.Polyline({
-      path:fligthPathPoints,
-      geodesic: true,
+      path:[],
+      geodesic: false,
       strokeColor: "#FF0000",
-      strokeOpacity: 1.0,
+      strokeOpacity: 2.0,
       strokeWeight: 2
     })
 
-    fligthPath.setMap(args.map)
+    for(let i=0;i<fligthPathPoints.length; i++){
+      setTimeout(function(coords){
+        let latlng = new args.maps.LatLng(coords.lat, coords.lng)
+        fligthPath.getPath().push(latlng)
+        marker.setPosition(latlng)
+        args.map.panTo(latlng)
+        fligthPath.setMap(args.map)
+      },i, fligthPathPoints[i])
+
+      clearInterval()
+    }
+
   }
+  
 
   render(){
     return(
@@ -65,9 +128,6 @@ class LoadGoogleMap extends Component{
           yesIWantToUseGoogleMapApiInternals 
           onGoogleApiLoaded={this.handleMapObjs}
           >
-
-            <Marker lat={15.527665} lng={74.907585} text="A"/>
-            <Marker lat={13.6113} lng={76.95476833333333} text="B"/>
           </GoogleMapReact>
       </div>
     )
